@@ -1,1 +1,193 @@
+#include <iostream>
+using namespace std;
 
+// Iterative binary search
+int BinarySearch_I(const int* numbers, int numbersSize, int key, int& comp) {
+    comp = 0;
+    int low = 0;
+    int high = numbersSize - 1;
+    while (low <= high) {
+        int mid = (low + high) / 2;
+        comp++;  // count each comparison of numbers[mid] to key
+        if (numbers[mid] < key) {
+            low = mid + 1;
+        } else if (numbers[mid] > key) {
+            high = mid - 1;
+        } else {
+            return mid;
+        }
+    }
+    return -1;
+}
+
+// Recursive binary search
+int BinarySearch_R(const int* numbers, int low, int high, int key, int& comp) {
+    if (low > high) return -1;
+    int mid = (low + high) / 2;
+    comp++;  // count each comparison
+    if (numbers[mid] < key) {
+        return BinarySearch_R(numbers, mid + 1, high, key, comp);
+    } else if (numbers[mid] > key) {
+        return BinarySearch_R(numbers, low, mid - 1, key, comp);
+    }
+    return mid;
+}
+
+// Linear search
+int linSearch(const int* numbers, int n, int target, int& comp) {
+    comp = 0;
+    for (int i = 0; i < n; i++) {
+        comp++;
+        if (numbers[i] == target)
+            return i;
+    }
+    return -1;
+}
+
+int main() {
+    int test[] = { 2, 4, 7, 10, 11, 32, 45, 87 };
+    const int testSize = sizeof(test) / sizeof(test[0]);
+
+    // Test 1: first element
+    int key1 = 2;
+    int compI = 0, compR = 0, compL = 0;
+    int r1 = BinarySearch_I(test, testSize, key1, compI);
+    int r2 = BinarySearch_R(test, 0, testSize - 1, key1, compR);
+    int r3 = linSearch(test, testSize, key1, compL);
+
+    if(r1 == -1){
+        cout << key1 << " was not found."  << ", comparisons: " << compI << endl;
+    }
+    else{
+         cout << "Key " << key1 << " (Binary Iterative): index " << r1 << ", comparisons: " << compI << endl;
+    }
+
+    if(r2 == -1){
+        cout << key1 << " was not found." << ", comparisons: " << compR << endl;
+    }
+    else{
+         cout << "Key " << key1 << " (Binary Recursive): index " << r2 << ", comparisons: " << compR << endl;
+    }
+
+    if(r3 == -1){
+        cout << key1 << " was not found." << ", comparisons: " << compL << endl;
+    }
+    else{
+         cout << "Key " << key1 << " (Linear): index " << r3 << ", comparisons: " << compL << endl;
+    }
+
+
+
+    // Test 2: last element
+    int key2 = 87;
+    compI = 0; compR = 0;
+    r1 = BinarySearch_I(test, testSize, key2, compI);
+    r2 = BinarySearch_R(test, 0, testSize - 1, key2, compR);
+    r3 = linSearch(test, testSize, key2, compL);
+
+    if(r1 == -1){
+        cout << key2 << " was not found."  << ", comparisons: " << compI << endl;
+    }
+    else{
+         cout << "Key " << key2 << " (Binary Iterative): index " << r1 << ", comparisons: " << compI << endl;
+    }
+
+    if(r2 == -1){
+        cout << key1 << " was not found." << ", comparisons: " << compR << endl;
+    }
+    else{
+         cout << "Key " << key2 << " (Binary Recursive): index " << r2 << ", comparisons: " << compR << endl;
+    }
+
+    if(r3 == -1){
+        cout << key1 << " was not found." << ", comparisons: " << compL << endl;
+    }
+    else{
+         cout << "Key " << key2 << " (Linear): index " << r3 << ", comparisons: " << compL << endl;
+    }
+
+    // Test 3: middle element
+    int key3 = 10;
+    compI = 0; compR = 0;
+    r1 = BinarySearch_I(test, testSize, key3, compI);
+    r2 = BinarySearch_R(test, 0, testSize - 1, key3, compR);
+    r3 = linSearch(test, testSize, key3, compL);
+
+    if(r1 == -1){
+        cout << key3 << " was not found."  << ", comparisons: " << compI << endl;
+    }
+    else{
+         cout << "Key " << key3 << " (Binary Iterative): index " << r1 << ", comparisons: " << compI << endl;
+    }
+
+    if(r2 == -1){
+        cout << key3 << " was not found." << ", comparisons: " << compR << endl;
+    }
+    else{
+         cout << "Key " << key3 << " (Binary Recursive): index " << r2 << ", comparisons: " << compR << endl;
+    }
+
+    if(r3 == -1){
+        cout << key3 << " was not found." << ", comparisons: " << compL << endl;
+    }
+    else{
+         cout << "Key " << key3 << " (Linear): index " << r3 << ", comparisons: " << compL << endl;
+    }
+
+    // Test 4: below range
+    int key4 = 0;
+    compI = 0; compR = 0;
+    r1 = BinarySearch_I(test, testSize, key4, compI);
+    r2 = BinarySearch_R(test, 0, testSize - 1, key4, compR);
+    r3 = linSearch(test, testSize, key4, compL);
+
+    if(r1 == -1){
+        cout << key4 << " was not found." << ", comparisons: " << compI << endl;
+    }
+    else{
+         cout << "Key " << key4 << " (Binary Iterative): index " << r1 << ", comparisons: " << compI << endl;
+    }
+
+    if(r2 == -1){
+        cout << key4 << " was not found." << ", comparisons: " << compR << endl;
+    }
+    else{
+         cout << "Key " << key4 << " (Binary Recursive): index " << r2 << ", comparisons: " << compR << endl;
+    }
+
+    if(r3 == -1){
+        cout << key4 << " was not found." << ", comparisons: " << compL << endl;
+    }
+    else{
+         cout << "Key " << key4 << " (Linear): index " << r3 << ", comparisons: " << compL << endl;
+    }
+
+    // Test 5: inside range but not present
+    int key5 = 8;
+    compI = 0; compR = 0;
+    r1 = BinarySearch_I(test, testSize, key5, compI);
+    r2 = BinarySearch_R(test, 0, testSize - 1, key5, compR);
+    r3 = linSearch(test, testSize, key5, compL);
+
+    if(r1 == -1){
+        cout << key5 << " was not found."  << ", comparisons: " << compI << endl;
+    }
+    else{
+         cout << "Key " << key5 << " (Binary Iterative): index " << r1 << ", comparisons: " << compI << endl;
+    }
+
+    if(r2 == -1){
+        cout << key1 << " was not found." << ", comparisons: " << compR  << endl;
+    }
+    else{
+         cout << "Key " << key5 << " (Binary Recursive): index " << r2 << ", comparisons: " << compR << endl;
+    }
+
+    if(r3 == -1){
+        cout << key1 << " was not found." << ", comparisons: " << compL << endl;
+    }
+    else{
+         cout << "Key " << key5 << " (Linear): index " << r3 << ", comparisons: " << compL << endl;
+    }
+    return 0;
+}   
