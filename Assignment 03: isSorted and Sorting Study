@@ -1,1 +1,236 @@
+#include <iostream>
+#include <string>
+#include <vector>
+#include <algorithm>
+#include <chrono>
+#include <iomanip> 
+#include <random>
 
+using namespace std;
+
+// struct declaration for benchmark function 
+struct BenchmarkResult {
+    double milliseconds;
+    bool sorted;
+};
+
+bool isSorted(vector<int>& nums) {
+    if (nums.empty()) return true;
+    if (nums.size() == 1) return true;
+    for (int i = 0; i < nums.size() - 1; i++) {
+        if (nums[i] > nums[i+1]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+void bubbleSort(vector<int>& v) {
+    int n = v.size();
+    for (int i = 0; i < n - 1; i++) {
+        for (int j = 0; j < n - i - 1; j++) {
+            if (v[j] > v[j + 1])
+                swap(v[j], v[j + 1]);
+        }
+    }
+}
+
+void selectionSort(vector<int> &arr) {
+    int n = arr.size();
+    for (int i = 0; i < n - 1; ++i) {
+        int min_idx = i;
+        for (int j = i + 1; j < n; ++j) {
+            if (arr[j] < arr[min_idx]) {
+                min_idx = j; 
+            }
+        }
+        swap(arr[i], arr[min_idx]);
+    }
+}
+
+void insertionSort(vector<int> &arr) {
+  for (int i = 1; i < arr.size(); i++) {
+    int key = arr[i];
+    int j = i - 1;
+    while (j >= 0 && key < arr[j]) {
+      arr[j + 1] = arr[j];
+      --j;
+    }
+    arr[j + 1] = key;
+  }
+}
+
+int partition(vector<int>& vec, int low, int high) {
+    // randomize pivot choice 
+    int randomPivotIdx = low + rand() % (high - low + 1);
+    swap(vec[randomPivotIdx], vec[high]);
+
+    int pivot = vec[high];
+    int i = low - 1;
+    for (int j = low; j < high; j++) {
+        if (vec[j] <= pivot) {
+            i++;
+            swap(vec[i], vec[j]);
+        }
+    }
+    swap(vec[i + 1], vec[high]);
+    return i + 1;
+}
+
+void quickSort(vector<int>& vec, int low, int high) {
+    if (low < high) {
+        int pi = partition(vec, low, high);
+        quickSort(vec, low, pi - 1);
+        quickSort(vec, pi + 1, high);
+    }
+}
+
+std::vector<int> makeRandomData(int size, std::mt19937& generator) {
+    std::uniform_int_distribution<int> distribution(-size * 10, size * 10);
+    std::vector<int> values(size);
+    for (int& value : values) {
+        value = distribution(generator);
+    }
+    return values;
+}
+
+std::vector<int> makeSortedData(int size) {
+    std::vector<int> values(size);
+    for (int i = 0; i < size; ++i) {
+        values[i] = i;
+    }
+    return values;
+}
+
+std::vector<int> makeReverseData(int size) {
+    std::vector<int> values(size);
+    for (int i = 0; i < size; ++i) {
+        values[i] = size - i;
+    }
+    return values;
+}
+
+using SortFunction = void (*)(std::vector<int>&);
+
+BenchmarkResult benchmark(const std::vector<int>& original,
+                          SortFunction sortFunction,
+                          int trials) {
+    double totalMilliseconds = 0.0;
+    bool everyTrialSorted = true;
+
+    for (int trial = 0; trial < trials; ++trial) {
+        std::vector<int> copy = original;
+
+        auto start = std::chrono::steady_clock::now();
+        sortFunction(copy);
+        auto finish = std::chrono::steady_clock::now();
+
+        totalMilliseconds +=
+            std::chrono::duration<double, std::milli>(finish - start).count();
+        everyTrialSorted = everyTrialSorted && isSorted(copy);
+    }
+
+    return {totalMilliseconds / trials, everyTrialSorted};
+}
+
+void printResult(const std::string& algorithm,
+                 const std::string& inputType,
+                 int size,
+                 const BenchmarkResult& result) {
+    std::cout << std::left << std::setw(16) << algorithm
+              << std::setw(16) << inputType
+              << std::right << std::setw(8) << size
+              << std::setw(18) << std::fixed << std::setprecision(3)
+              << result.milliseconds
+              << std::setw(10) << (result.sorted ? "PASS" : "FAIL")
+              << '\n';
+}
+
+void compareSort() {
+    std::random_device rd;
+    std::mt19937 generator(rd());
+
+    int sizes[] = {5000, 10000, 20000}; 
+    int trials = 5;
+
+    std::cout << "\n" << std::string(68, '=') << "\n";
+    std::cout << std::left << std::setw(16) << "Algorithm" 
+              << std::setw(16) << "Data State" 
+              << std::right << std::setw(8) << "Size" 
+              << std::setw(18) << "Avg Time (ms)" 
+              << std::setw(10) << "Status" << "\n";
+    std::cout << std::string(68, '=') << "\n";
+
+
+    SortFunction algorithms[] = {
+        bubbleSort, 
+        insertionSort, 
+        selectionSort, 
+        [](vector<int>& v) { quickSort(v, 0, v.size() - 1); }
+    };
+    std::string algoNames[] = {"Bubble Sort", "Insertion Sort", "Selection Sort", "Quick Sort"};
+
+    for (int size : sizes) {
+        auto randomData = makeRandomData(size, generator);
+        auto sortedData = makeSortedData(size);
+        auto reverseData = makeReverseData(size);
+
+        for (int i = 0; i < 4; ++i) {
+            auto resRand = benchmark(randomData, algorithms[i], trials);
+            printResult(algoNames[i], "Random", size, resRand);
+
+            auto resSort = benchmark(sortedData, algorithms[i], trials);
+            printResult(algoNames[i], "Sorted", size, resSort);
+
+            auto resRev = benchmark(reverseData, algorithms[i], trials);
+            printResult(algoNames[i], "Reverse", size, resRev);
+        }
+        std::cout << std::string(68, '-') << "\n";
+    }
+}
+
+int main() {
+    // example of sorted array
+    vector<int> nums = {1, 2, 3, 4, 5};
+    if (isSorted(nums)) {
+        cout << "Sorted array ex:sorted" << endl;
+    } else {
+        cout << "Sorted array ex:not sorted" << endl;
+    }
+    //test with unsorted array
+    vector<int> bubbleTest = {10, 23, 1, 4, 7};
+    bubbleSort(bubbleTest);
+    if (isSorted(bubbleTest)) {
+        cout << "Bubble Sort Test: sorted" << endl;
+    } else {
+        cout << "Bubble Sort Test: not sorted" << endl;
+    }
+    
+    vector<int> selectionTest = {10, 23, 1, 4, 7};
+    selectionSort(selectionTest);
+    if (isSorted(selectionTest)) {
+        cout << "Selection Sort Test: sorted" << endl;
+    } else {
+        cout << "Selection Sort Test: not sorted" << endl;
+    }
+    
+    vector<int> insertionTest = {10, 23, 1, 4, 7};
+    insertionSort(insertionTest);
+    if (isSorted(insertionTest)) {
+        cout << "Insertion Sort Test: sorted" << endl;
+    } else {
+        cout << "Insertion Sort Test: not sorted" << endl;
+    }
+
+    vector<int> quickTest = {10, 23, 1, 4, 7};
+    quickSort(quickTest, 0, quickTest.size() - 1);
+    if (isSorted(quickTest)) {
+        cout << "Quick Sort Test: sorted" << endl;
+    } else {
+        cout << "Quick Sort Test: not sorted" << endl;
+    }
+    
+    compareSort();
+    
+    return 0;
+}
