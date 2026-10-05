@@ -1,0 +1,219 @@
+#include <iostream>
+#include <string>
+#include <chrono>
+#include <thread>
+#include <vector>
+#include <cstdlib> 
+#include <ctime>   
+
+using namespace std;
+
+
+class boardSpace {
+public:
+    string propertyName;
+    string ownerName;
+    int purchaseCost;
+    int rentCost;
+    bool owned;
+    boardSpace* next;
+
+    boardSpace() {
+        propertyName = "No Name";
+        ownerName = "No Owner Name";
+        purchaseCost = -1;
+        rentCost = -1;
+        owned = false;
+        next = nullptr;
+    }
+
+    boardSpace(string name, int cost) {
+        propertyName = name;
+        ownerName = "No Owner Name";
+        purchaseCost = cost;
+        rentCost = cost / 5; // rent set to 20% of purchase cost
+        owned = false;
+        next = nullptr;
+    }
+};
+
+struct Player {
+    string name;
+    int balance;
+    boardSpace* currentSpace;
+
+    Player(string n, int startBalance, boardSpace* startSpace) {
+        name = n;
+        balance = startBalance;
+        currentSpace = startSpace;
+    }
+};
+
+class MonopolyBoard {
+private:
+    boardSpace* head;
+    boardSpace* tail;
+    int totalSpaces;
+
+public:
+    MonopolyBoard() {
+        head = nullptr;
+        tail = nullptr;
+        totalSpaces = 0;
+    }
+
+    // pt 1 - linked list operations
+    void add(string name, int cost) {
+        boardSpace* temp = new boardSpace(name, cost);
+        if (!head) {
+            head = temp;
+            tail = temp;
+            temp->next = head;
+        } else {
+            tail->next = temp;
+            tail = temp;
+            tail->next = head;
+        }
+        totalSpaces++;
+    }
+
+    boardSpace* search(string name) {
+        if (!head) return nullptr;
+        boardSpace* temp = head;
+        do {
+            if (temp->propertyName == name) return temp;
+            temp = temp->next;
+        } while (temp != head);
+        return nullptr;
+    }
+
+    bool remove(string name) {
+        if (!head) return false;
+        boardSpace* curr = head;
+        boardSpace* prev = tail;
+        do {
+            if (curr->propertyName == name) {
+                if (head == tail) {
+                    head = nullptr;
+                    tail = nullptr;
+                } else {
+                    if (curr == head) head = head->next;
+                    if (curr == tail) tail = prev;
+                    prev->next = curr->next;
+                }
+                delete curr;
+                totalSpaces--;
+                return true;
+            }
+            prev = curr;
+            curr = curr->next;
+        } while (curr != head);
+        return false;
+    }
+
+    void print() {
+        if (!head) return;
+        boardSpace* temp = head;
+        cout << "--- BOARD STATE ---\n";
+        do {
+            string status = temp->owned ? ("Owned by " + temp->ownerName) : "Unowned";
+            cout << temp->propertyName << " | Cost: $" << temp->purchaseCost << " | Rent: $" << temp->rentCost << " | " << status << "\n";
+            temp = temp->next;
+        } while (temp != head);
+        cout << "-------------------\n";
+    }
+
+    boardSpace* traversal(boardSpace* curr, int spaces) {
+        for (int i = 0; i < spaces; i++) {
+            curr = curr->next;
+        }
+        return curr;
+    }
+
+    void handleLanding(Player& player) {
+        boardSpace* space = player.currentSpace;
+        cout << player.name << " landed on " << space->propertyName << ".\n";
+
+        if (space->owned) {
+            if (space->ownerName == player.name) {
+                cout << player.name << " already owns this property.\n";
+            } else {
+                cout << "Property is owned by " << space->ownerName << "! " << player.name << " pays $" << space->rentCost << " in rent.\n";
+                player.balance -= space->rentCost;
+            }
+        } else {
+            if (player.balance >= space->purchaseCost) {
+                player.balance -= space->purchaseCost;
+                space->owned = true;
+                space->ownerName = player.name;
+                cout << player.name << " purchased " << space->propertyName << " for $" << space->purchaseCost << "!\n";
+            } else {
+                cout << player.name << " cannot afford " << space->propertyName << " (Cost: $" << space->purchaseCost << ").\n";
+            }
+        }
+    }
+
+    void generate(int numSpaces) {
+        this->totalSpaces = numSpaces;
+        for (int i = 0; i < numSpaces; i++) {
+            int cost = 50 + (i * 30);
+            this->add("Property " + to_string(i + 1), cost);
+        }
+    }
+
+void simulate(int spaces, int turns) {
+    this->generate(spaces);
+    Player ethan("Ethan", 1500, head);
+    Player alex("Alex", 1500, head);
+
+    for (int i = 0; i < turns; i++) {
+
+        cout << "=== TURN " << (i + 1) << " ===\n";
+        this->print();
+        cout << "\n";
+        
+        cout << "--- PLAYER BALANCES ---\n";
+        cout << ethan.name << ": $" << ethan.balance << "\n";
+        cout << alex.name << ": $" << alex.balance << "\n";
+        cout << "-----------------------\n\n";
+
+        int ethanMove = (rand() % 6) + 1;
+        int alexMove = (rand() % 6) + 1;
+
+        ethan.currentSpace = this->traversal(ethan.currentSpace, ethanMove);
+        cout << ethan.name << " rolled a " << ethanMove << ".\n";
+        this->handleLanding(ethan);
+        cout << "\n";
+
+        alex.currentSpace = this->traversal(alex.currentSpace, alexMove);
+        cout << alex.name << " rolled a " << alexMove << ".\n";
+        this->handleLanding(alex);
+        cout << "\n";
+
+        cout << "End of turn " << (i + 1) << ". Proceeding...\n";
+        cout << "========================================\n\n"; // Added divider for readability
+        this_thread::sleep_for(chrono::milliseconds(2500));
+    }
+
+
+    cout << "========================================\n";
+    cout << " SIMULATION COMPLETE (AFTER " << turns << " TURNS) \n";
+    cout << "========================================\n\n";
+    
+    cout << "--- FINAL STANDINGS ---\n";
+    cout << ethan.name << " Ending Balance: $" << ethan.balance << " (Currently on " << ethan.currentSpace->propertyName << ")\n";
+    cout << alex.name << " Ending Balance: $" << alex.balance << " (Currently on " << alex.currentSpace->propertyName << ")\n";
+    cout << "-----------------------\n\n";
+    
+    this->print();
+    cout << "========================================\n";
+}
+};
+
+int main() {
+    srand(static_cast<unsigned int>(time(nullptr)));
+
+    MonopolyBoard Board;
+    Board.simulate(10, 10); // 10 board spaces, 10 simulation turns
+    return 0;
+}
