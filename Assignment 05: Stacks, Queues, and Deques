@@ -1,0 +1,422 @@
+#include <iostream>
+#include <stdexcept>
+#include <string>
+using namespace std;
+
+// stack with array
+class ArrayStack {
+    int arr[20];
+    int count = 0;
+
+public:
+    void push(int x) {
+        if (count == 20)
+            throw overflow_error("full");
+        arr[count++] = x;
+    }
+
+    int pop() {
+        if (count == 0)
+            throw underflow_error("empty");
+        return arr[--count];
+    }
+
+    bool empty() const {
+        return count == 0;
+    }
+};
+
+// stack w/ linked list
+class LinkedStack {
+    struct Node {
+        int value;
+        Node* next;
+    };
+
+    Node* head = nullptr;
+
+public:
+    LinkedStack() = default;
+    LinkedStack(const LinkedStack&) = delete;
+    LinkedStack& operator=(const LinkedStack&) = delete;
+
+    ~LinkedStack() {
+        while (!empty())
+            pop();
+    }
+
+    void push(int x) {
+        head = new Node{x, head};
+    }
+
+    int pop() {
+        if (empty())
+            throw underflow_error("empty");
+
+        Node* old = head;
+        int x = old->value;
+        head = old->next;
+        delete old;
+        return x;
+    }
+
+    bool empty() const {
+        return head == nullptr;
+    }
+};
+
+// queue w/ array
+class ArrayQueue {
+    int data[20];
+    int front = 0;
+    int count = 0;
+
+public:
+    void enqueue(int x) {
+        if (count == 20)
+            throw overflow_error("full");
+
+        data[(front + count) % 20] = x;
+        ++count;
+    }
+
+    int dequeue() {
+        if (empty())
+            throw underflow_error("empty");
+
+        int x = data[front];
+        front = (front + 1) % 20;
+        --count;
+        return x;
+    }
+
+    bool empty() const {
+        return count == 0;
+    }
+};
+
+// queue w/ linked list
+class LinkedQueue {
+    struct Node {
+        int value;
+        Node* next;
+    };
+
+    Node* first = nullptr;
+    Node* last = nullptr;
+
+public:
+    LinkedQueue() = default;
+    LinkedQueue(const LinkedQueue&) = delete;
+    LinkedQueue& operator=(const LinkedQueue&) = delete;
+
+    ~LinkedQueue() {
+        while (!empty())
+            dequeue();
+    }
+
+    void enqueue(int x) {
+        Node* node = new Node{x, nullptr};
+
+        if (last)
+            last->next = node;
+        else
+            first = node;
+
+        last = node;
+    }
+
+    int dequeue() {
+        if (empty())
+            throw underflow_error("empty");
+
+        Node* old = first;
+        int x = old->value;
+        first = first->next;
+
+        if (!first)
+            last = nullptr;
+
+        delete old;
+        return x;
+    }
+
+    bool empty() const {
+        return first == nullptr;
+    }
+};
+
+// deque w/ array
+class ArrayDeque {
+    int data[20];
+    int front = 0;
+    int count = 0;
+
+public:
+    void pushFront(int x) {
+        if (count == 20)
+            throw overflow_error("full");
+
+        front = (front + 19) % 20;
+        data[front] = x;
+        ++count;
+    }
+
+    void pushBack(int x) {
+        if (count == 20)
+            throw overflow_error("full");
+
+        data[(front + count) % 20] = x;
+        ++count;
+    }
+
+    int popFront() {
+        if (empty())
+            throw underflow_error("empty");
+
+        int x = data[front];
+        front = (front + 1) % 20;
+        --count;
+        return x;
+    }
+
+    int popBack() {
+        if (empty())
+            throw underflow_error("empty");
+
+        --count;
+        return data[(front + count) % 20];
+    }
+
+    bool empty() const {
+        return count == 0;
+    }
+};
+
+// deque w/ linked list
+class LinkedDeque {
+    struct Node {
+        int value;
+        Node* prev;
+        Node* next;
+    };
+
+    Node* first = nullptr;
+    Node* last = nullptr;
+
+public:
+    LinkedDeque() = default;
+    LinkedDeque(const LinkedDeque&) = delete;
+    LinkedDeque& operator=(const LinkedDeque&) = delete;
+
+    ~LinkedDeque() {
+        while (!empty())
+            popFront();
+    }
+
+    void pushFront(int x) {
+        Node* node = new Node{x, nullptr, first};
+
+        if (first)
+            first->prev = node;
+        else
+            last = node;
+
+        first = node;
+    }
+
+    void pushBack(int x) {
+        Node* node = new Node{x, last, nullptr};
+
+        if (last)
+            last->next = node;
+        else
+            first = node;
+
+        last = node;
+    }
+
+    int popFront() {
+        if (empty())
+            throw underflow_error("empty");
+
+        Node* old = first;
+        int x = old->value;
+        first = first->next;
+
+        if (first)
+            first->prev = nullptr;
+        else
+            last = nullptr;
+
+        delete old;
+        return x;
+    }
+
+    int popBack() {
+        if (empty())
+            throw underflow_error("empty");
+
+        Node* old = last;
+        int x = old->value;
+        last = last->prev;
+
+        if (last)
+            last->next = nullptr;
+        else
+            first = nullptr;
+
+        delete old;
+        return x;
+    }
+
+    bool empty() const {
+        return first == nullptr;
+    }
+};
+
+// stack test
+template <typename Stack>
+void testStack(const string& name) {
+    Stack s;
+    cout << name << ": ";
+
+    for (int i = 1; i <= 6; ++i)
+        s.push(i);
+
+    for (int i = 0; i < 6; ++i)
+        cout << s.pop() << ' ';
+
+    cout << "| empty=" << s.empty();
+
+    try {
+        s.pop();
+    }
+    catch (const underflow_error&) {
+        cout << " | empty pop caught";
+    }
+
+    cout << '\n';
+}
+
+//queue tests
+template <typename Queue>
+void testQueue(const string& name) {
+    Queue q;
+    cout << name << ": ";
+
+    for (int i = 1; i <= 6; ++i)
+        q.enqueue(i);
+
+    for (int i = 0; i < 6; ++i)
+        cout << q.dequeue() << ' ';
+
+    cout << "| empty=" << q.empty();
+
+    try {
+        q.dequeue();
+    }
+    catch (const underflow_error&) {
+        cout << " | empty dequeue caught";
+    }
+
+    cout << '\n';
+}
+
+// deque tests
+template <typename Deque>
+void testDeque(const string& name) {
+    Deque d;
+    cout << name << ": ";
+
+    // 12 operations using both ends
+    d.pushBack(1);
+    d.pushFront(2);
+    d.pushBack(3);
+    d.pushFront(4);
+    d.pushBack(5);
+    d.pushFront(6);
+
+    cout << d.popFront() << ' ';
+    cout << d.popBack() << ' ';
+    cout << d.popFront() << ' ';
+    cout << d.popBack() << ' ';
+    cout << d.popFront() << ' ';
+    cout << d.popBack() << ' ';
+
+    cout << "| empty=" << d.empty();
+
+    try {
+        d.popFront();
+    }
+    catch (const underflow_error&) {
+        cout << " | empty pop caught";
+    }
+
+    cout << '\n';
+}
+
+
+int main() {
+    cout << boolalpha;
+
+    testStack<ArrayStack>("Array stack");
+    testStack<LinkedStack>("Linked stack");
+
+    testQueue<ArrayQueue>("Array queue");
+    testQueue<LinkedQueue>("Linked queue");
+
+    testDeque<ArrayDeque>("Array deque");
+    testDeque<LinkedDeque>("Linked deque");
+
+    // Test circular array queue
+    ArrayQueue q;
+
+    for (int i = 0; i < 20; ++i)
+        q.enqueue(i);
+
+    for (int i = 0; i < 10; ++i)
+        q.dequeue();
+
+    for (int i = 20; i < 30; ++i)
+        q.enqueue(i);
+
+    bool ok = true;
+
+    for (int i = 10; i < 30; ++i) {
+        if (q.dequeue() != i)
+            ok = false;
+    }
+
+    cout << "Array queue wrap-around: "
+         << (ok ? "PASS" : "FAIL") << '\n';
+
+    // Test circular array deque
+    ArrayDeque d;
+
+    for (int i = 0; i < 20; ++i)
+        d.pushFront(i);
+
+    bool dequeOk = true;
+
+    for (int i = 0; i < 20; ++i) {
+        if (d.popBack() != i)
+            dequeOk = false;
+    }
+
+    cout << "Array deque wrap-around: "
+         << (dequeOk ? "PASS" : "FAIL") << '\n';
+
+    // test full array
+    try {
+        ArrayStack s;
+
+        for (int i = 0; i < 21; ++i)
+            s.push(i);
+    }
+    catch (const overflow_error&) {
+        cout << "Array full handling: PASS\n";
+    }
+
+    return 0;
+}
